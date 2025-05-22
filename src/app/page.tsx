@@ -54,6 +54,18 @@ export default function Home() {
   const [humidityData, setHumidityData] = useState<SensorValue[]>([])
   const [ledState, setLedState] = useState<'on' | 'off'>('off')
 
+  // Load actual LED state once
+  useEffect(() => {
+    fetch('/api/led-state')
+      .then(res => res.json())
+      .then(data => {
+        if (data?.state === 'on' || data?.state === 'off') {
+          setLedState(data.state)
+        }
+      })
+  }, [])
+
+
   function toggleLed() {
     const nextState = ledState === 'off' ? 'on' : 'off'
     fetch('/api/led', {
@@ -61,9 +73,18 @@ export default function Home() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ state: nextState })
     }).then(res => {
-      if (res.ok) setLedState(nextState)
+      if (res.ok) {
+        // Reload actual state from DB to confirm it was recorded
+        fetch('/api/led-state')
+          .then(res => res.json())
+          .then(data => {
+            if (data?.state === 'on' || data?.state === 'off') {
+              setLedState(data.state)
+            }
+          })
+      }
     })
-}  
+  }
   useEffect(() => {
     fetch(`/api/sensorvalues?sensor=temperature&interval=${interval}`)
       .then(res => res.json())
