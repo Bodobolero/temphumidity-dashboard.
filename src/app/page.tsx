@@ -86,13 +86,21 @@ export default function Home() {
     })
   }
   useEffect(() => {
-    fetch(`/api/sensorvalues?sensor=temperature&interval=${interval}`)
-      .then(res => res.json())
-      .then(setTemperatureData)
+    const fetchData = () => {
+      fetch(`/api/sensorvalues?sensor=temperature&interval=${interval}`)
+        .then(res => res.json())
+        .then(setTemperatureData)
 
-    fetch(`/api/sensorvalues?sensor=humidity&interval=${interval}`)
-      .then(res => res.json())
-      .then(setHumidityData)
+      fetch(`/api/sensorvalues?sensor=humidity&interval=${interval}`)
+        .then(res => res.json())
+        .then(setHumidityData)
+    }
+
+    fetchData() // initial load
+
+    const intervalId = window.setInterval(fetchData, 60_000)
+
+    return () => clearInterval(intervalId) // cleanup on unmount
   }, [interval])
 
   return (
