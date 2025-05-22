@@ -20,6 +20,7 @@ type SensorValue = {
 
 ChartJS.register(TimeScale, LinearScale, PointElement, LineElement, Tooltip, Legend)
 
+
 const intervals = ['1 hour', '1 day', '7 day', '15 day']
 
 function SensorChart({ label, data }: { label: string, data: SensorValue[] }) {
@@ -51,6 +52,18 @@ export default function Home() {
   const [interval, setInterval] = useState('1 hour')
   const [temperatureData, setTemperatureData] = useState<SensorValue[]>([])
   const [humidityData, setHumidityData] = useState<SensorValue[]>([])
+  const [ledState, setLedState] = useState<'on' | 'off'>('off')
+
+  function toggleLed() {
+    const nextState = ledState === 'off' ? 'on' : 'off'
+    fetch('/api/led', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ state: nextState })
+    }).then(res => {
+      if (res.ok) setLedState(nextState)
+    })
+}  
   useEffect(() => {
     fetch(`/api/sensorvalues?sensor=temperature&interval=${interval}`)
       .then(res => res.json())
@@ -62,21 +75,33 @@ export default function Home() {
   }, [interval])
 
   return (
-    <div className="p-4">
-      <div className="flex gap-4 mb-4">
-        {intervals.map(i => (
-          <button
-            key={i}
-            onClick={() => setInterval(i)}
-            className={`px-4 py-2 rounded border ${i === interval ? 'bg-gray-200' : ''}`}
-          >
-            {i}
-          </button>
-        ))}
-      </div>
-
-      <SensorChart label="Temperature" data={temperatureData} />
-      <SensorChart label="Humidity" data={humidityData} />
+  <div className="p-4">
+    {/* Time range buttons */}
+    <div className="flex gap-4 mb-4">
+      {intervals.map(i => (
+        <button
+          key={i}
+          onClick={() => setInterval(i)}
+          className={`px-4 py-2 rounded border ${i === interval ? 'bg-gray-200' : ''}`}
+        >
+          {i}
+        </button>
+      ))}
     </div>
-  )
+
+    {/* LED toggle button */}
+    <div className="mb-4">
+      <button
+        onClick={toggleLed}
+        className="px-4 py-2 border rounded bg-blue-200 hover:bg-blue-300"
+      >
+        Toggle LED (currently {ledState})
+      </button>
+    </div>
+
+    {/* Sensor charts */}
+    <SensorChart label="Temperature" data={temperatureData} />
+    <SensorChart label="Humidity" data={humidityData} />
+  </div>
+)
 }
