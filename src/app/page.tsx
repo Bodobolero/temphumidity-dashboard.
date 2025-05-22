@@ -13,20 +13,25 @@ import {
 } from 'chart.js'
 import 'chartjs-adapter-date-fns'
 
+type SensorValue = {
+  measure_time: string
+  sensor_value: number
+}
+
 ChartJS.register(TimeScale, LinearScale, PointElement, LineElement, Tooltip, Legend)
 
 const intervals = ['1 hour', '1 day', '7 day', '15 day']
 
-function SensorChart({ label, data }: { label: string, data: any[] }) {
+function SensorChart({ label, data }: { label: string, data: SensorValue[] }) {
   return (
     <div className="mb-8">
       <h2 className="text-lg font-semibold mb-2">{label}</h2>
       <Line
         data={{
-          labels: data.map((d: any) => new Date(d.measure_time)),
+          labels: data.map(d => new Date(d.measure_time)),
           datasets: [{
             label,
-            data: data.map((d: any) => d.sensor_value),
+            data: data.map(d => d.sensor_value),
             borderWidth: 2,
             fill: false,
           }],
@@ -44,9 +49,8 @@ function SensorChart({ label, data }: { label: string, data: any[] }) {
 
 export default function Home() {
   const [interval, setInterval] = useState('1 hour')
-  const [temperatureData, setTemperatureData] = useState([])
-  const [humidityData, setHumidityData] = useState([])
-
+  const [temperatureData, setTemperatureData] = useState<SensorValue[]>([])
+  const [humidityData, setHumidityData] = useState<SensorValue[]>([])
   useEffect(() => {
     fetch(`/api/sensorvalues?sensor=temperature&interval=${interval}`)
       .then(res => res.json())
