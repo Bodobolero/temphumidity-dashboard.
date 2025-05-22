@@ -3,7 +3,13 @@
 import { useState, useEffect } from 'react'
 import { Line } from 'react-chartjs-2'
 import {
-  Chart as ChartJS, TimeScale, LinearScale, PointElement, LineElement, Tooltip, Legend,
+  Chart as ChartJS,
+  TimeScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Tooltip,
+  Legend,
 } from 'chart.js'
 import 'chartjs-adapter-date-fns'
 
@@ -11,16 +17,45 @@ ChartJS.register(TimeScale, LinearScale, PointElement, LineElement, Tooltip, Leg
 
 const intervals = ['1 hour', '1 day', '7 day', '15 day']
 
+function SensorChart({ label, data }: { label: string, data: any[] }) {
+  return (
+    <div className="mb-8">
+      <h2 className="text-lg font-semibold mb-2">{label}</h2>
+      <Line
+        data={{
+          labels: data.map((d: any) => new Date(d.measure_time)),
+          datasets: [{
+            label,
+            data: data.map((d: any) => d.sensor_value),
+            borderWidth: 2,
+            fill: false,
+          }],
+        }}
+        options={{
+          scales: {
+            x: { type: 'time' },
+            y: { beginAtZero: false },
+          },
+        }}
+      />
+    </div>
+  )
+}
+
 export default function Home() {
-  const [sensor, setSensor] = useState('temperature')
   const [interval, setInterval] = useState('1 hour')
-  const [data, setData] = useState([])
+  const [temperatureData, setTemperatureData] = useState([])
+  const [humidityData, setHumidityData] = useState([])
 
   useEffect(() => {
-    fetch(`/api/sensorvalues?sensor=${sensor}&interval=${interval}`)
+    fetch(`/api/sensorvalues?sensor=temperature&interval=${interval}`)
       .then(res => res.json())
-      .then(setData)
-  }, [sensor, interval])
+      .then(setTemperatureData)
+
+    fetch(`/api/sensorvalues?sensor=humidity&interval=${interval}`)
+      .then(res => res.json())
+      .then(setHumidityData)
+  }, [interval])
 
   return (
     <div className="p-4">
@@ -35,23 +70,9 @@ export default function Home() {
           </button>
         ))}
       </div>
-      <Line
-        data={{
-          labels: data.map((d: any) => new Date(d.measure_time)),
-          datasets: [{
-            label: sensor,
-            data: data.map((d: any) => d.sensor_value),
-            borderWidth: 2,
-            fill: false,
-          }],
-        }}
-        options={{
-          scales: {
-            x: { type: 'time' },
-            y: { beginAtZero: false },
-          },
-        }}
-      />
+
+      <SensorChart label="Temperature" data={temperatureData} />
+      <SensorChart label="Humidity" data={humidityData} />
     </div>
   )
 }
